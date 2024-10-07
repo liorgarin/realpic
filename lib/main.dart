@@ -6,6 +6,7 @@ import 'database_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'dart:io';
+import 'buy_new_film_page.dart'; // Import the new page
 
 void main() {
   runApp(const PhotoSaverApp());
@@ -182,6 +183,35 @@ class _FilmHomePageState extends State<FilmHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${_capitalize(currentStatus)} Films'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const BuyNewFilmPage()),
+                ).then((_) {
+                  // Refresh the film lists when returning from the BuyNewFilmPage
+                  _loadStatusCounts();
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // Background color
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15.0), // Rounded corners
+                ),
+              ),
+              child: const Text(
+                'Buy New Film',
+                style: TextStyle(
+                  color: Colors.white, // Text color
+                  fontSize: 16.0,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: FilmList(
         key: _filmListKeys[currentStatus],
@@ -189,72 +219,14 @@ class _FilmHomePageState extends State<FilmHomePage> {
         onStatusChange: _loadStatusCounts, // Callback to refresh counts
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: _currentIndex == _statuses.indexOf(FilmStatus.active) // Show FAB only on 'active' tab
-          ? FloatingActionButton(
-              onPressed: _showAddFilmDialog,
-              child: const Icon(Icons.add),
-              tooltip: 'Add New Film',
-            )
-          : null,
-    );
-  }
-
-  // Dialog to add a new film
-  Future<void> _showAddFilmDialog() async {
-    TextEditingController _controller = TextEditingController();
-    int? _selectedMaxPhotos;
-    List<int> options = [3, 18, 36, 72]; // Added 3 photos option
-
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, StateSetter setState) {
-            return AlertDialog(
-              title: const Text("Add New Film"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(hintText: "Film Name"),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<int>(
-                    value: _selectedMaxPhotos,
-                    hint: const Text("Select Max Photos"),
-                    items: options.map((int value) {
-                      return DropdownMenuItem<int>(
-                        value: value,
-                        child: Text("$value Photos"),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedMaxPhotos = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: (_controller.text.isNotEmpty &&
-                          _selectedMaxPhotos != null)
-                      ? () async {
-                          await _dbHelper.insertFilm(_controller.text, _selectedMaxPhotos!);
-                          print('Added film: ${_controller.text} with max photos: $_selectedMaxPhotos'); // Debugging
-                          await _loadStatusCounts(); // Refresh counts and FilmList
-                          Navigator.of(context).pop();
-                        }
-                      : null,
-                  child: const Text("Add"),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      // Remove the FAB as it's now replaced by the AppBar button
+      // floatingActionButton: _currentIndex == _statuses.indexOf(FilmStatus.active) // Show FAB only on 'active' tab
+      //     ? FloatingActionButton(
+      //         onPressed: _showAddFilmDialog,
+      //         child: const Icon(Icons.add),
+      //         tooltip: 'Add New Film',
+      //       )
+      //     : null,
     );
   }
 }
@@ -558,6 +530,9 @@ class _FilmTileState extends State<FilmTile> {
                   print('Order confirmation failed due to missing details.'); // Debugging
                 }
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // Ensure button background is blue
+              ),
               child: const Text("Confirm"),
             ),
           ],
@@ -610,7 +585,7 @@ class _FilmTileState extends State<FilmTile> {
             color: _getBorderColor(status),
             width: 2.0,
           ),
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(20.0),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withOpacity(0.2),
