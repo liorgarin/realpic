@@ -394,6 +394,49 @@ class _FilmTileState extends State<FilmTile> {
     print('Film "${widget.film['name']}" has $photoCount photo(s).'); // Debugging
   }
 
+  // Get border color based on status
+  Color _getBorderColor(String status) {
+    switch (status) {
+      case FilmStatus.active:
+        return Colors.green;
+      case FilmStatus.readyToPrint:
+        return Colors.orange;
+      case FilmStatus.onTheWay:
+        return Colors.grey;
+      case FilmStatus.arrived:
+        return Colors.blue; // As per user request
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Handle tap on the frame
+  void _handleFrameTap() {
+    switch (status) {
+      case FilmStatus.active:
+        _takePhoto();
+        break;
+      case FilmStatus.readyToPrint:
+        _confirmOrder();
+        break;
+      case FilmStatus.onTheWay:
+        // Optionally, show a message or perform another action
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Film is on the way.")),
+        );
+        print('Film "${widget.film['name']}" is on the way.'); // Debugging
+        break;
+      case FilmStatus.arrived:
+        _navigateToGallery();
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Unknown film status.")),
+        );
+        print('Film "${widget.film['name']}" has an unknown status.'); // Debugging
+    }
+  }
+
   // Handle taking a photo
   Future<void> _takePhoto() async {
     if (photoCount >= maxPhotos) {
@@ -556,40 +599,51 @@ class _FilmTileState extends State<FilmTile> {
 
   @override
   Widget build(BuildContext context) {
-    Widget actionButton;
-
-    if (status == FilmStatus.active) {
-      bool isButtonDisabled = photoCount >= maxPhotos;
-      actionButton = ElevatedButton(
-        onPressed: isButtonDisabled ? null : _takePhoto,
-        child: const Text('Take Photo'),
-      );
-    } else if (status == FilmStatus.readyToPrint) {
-      actionButton = ElevatedButton(
-        onPressed: _confirmOrder,
-        child: const Text('Confirm Order'),
-      );
-    } else if (status == FilmStatus.onTheWay) {
-      actionButton = const Text('Film is on the way');
-    } else if (status == FilmStatus.arrived) {
-      actionButton = ElevatedButton(
-        onPressed: _navigateToGallery,
-        child: const Text('Gallery'),
-      );
-    } else {
-      actionButton = const SizedBox(); // Empty widget if status is unknown
-    }
-
-    return ListTile(
-      title: Text(widget.film['name']),
-      subtitle: Text(
-          'Film has $photoCount/$maxPhotos photos\nStatus: ${_capitalize(status)}'),
-      trailing: actionButton,
+    return GestureDetector(
+      onTap: _handleFrameTap, // Handle tap based on status
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white, // Frame interior color
+          border: Border.all(
+            color: _getBorderColor(status),
+            width: 2.0,
+          ),
+          borderRadius: BorderRadius.circular(8.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3), // changes position of shadow
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.film['name'],
+              style: const TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            Text(
+              'Photos: $photoCount/$maxPhotos',
+              style: const TextStyle(
+                fontSize: 14.0,
+                color: Colors.black54,
+              ),
+            ),
+            // Remove status text as it's indicated by the tab and border color
+          ],
+        ),
+      ),
     );
   }
-
-  // Capitalize the first letter of a string
-  String _capitalize(String s) => s[0].toUpperCase() + s.substring(1);
 }
 
 // GalleryPage Widget to display photos of a film

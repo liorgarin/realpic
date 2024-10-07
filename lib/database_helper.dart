@@ -42,7 +42,6 @@ class DatabaseHelper {
         status TEXT,
         receiver_name TEXT,
         phone_number TEXT,
-        address TEXT,
         country TEXT,
         city TEXT,
         street_address TEXT,
@@ -70,17 +69,12 @@ class DatabaseHelper {
       // Upgrade to version 2
       await db.execute("ALTER TABLE films ADD COLUMN receiver_name TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN phone_number TEXT;");
-      await db.execute("ALTER TABLE films ADD COLUMN address TEXT;");
-      print('Database upgraded to version 2');
-    }
-    if (oldVersion < 3) {
-      // Upgrade to version 3
       await db.execute("ALTER TABLE films ADD COLUMN country TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN city TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN street_address TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN postal_code TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN additional_details TEXT;");
-      print('Database upgraded to version 3');
+      print('Database upgraded to version 2 and 3');
     }
   }
 
@@ -94,12 +88,6 @@ class DatabaseHelper {
     });
     print('Inserted film with ID: $filmId, Name: $name, Max Photos: $maxPhotos');
     return filmId;
-  }
-
-  // Fetch all films
-  Future<List<Map<String, dynamic>>> getFilms() async {
-    final db = await database;
-    return await db.query('films');
   }
 
   // Fetch films by status
