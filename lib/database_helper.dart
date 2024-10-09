@@ -12,7 +12,7 @@ class DatabaseHelper {
 
   DatabaseHelper._internal();
 
-  static const int _databaseVersion = 3; // Updated database version
+  static const int _databaseVersion = 3; // Ensure this is incremented if schema changes
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -66,7 +66,7 @@ class DatabaseHelper {
   // Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Upgrade to version 2
+      // Upgrade to version 2 and 3
       await db.execute("ALTER TABLE films ADD COLUMN receiver_name TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN phone_number TEXT;");
       await db.execute("ALTER TABLE films ADD COLUMN country TEXT;");
@@ -193,6 +193,24 @@ class DatabaseHelper {
       whereArgs: [filmId],
     );
     print('Updated shipping details for film ID: $filmId. Rows affected: $count');
+  }
+
+  // Update a film's maximum photo count
+  Future<void> updateFilmMaxPhotos(int filmId, int additionalPhotos) async {
+    final db = await database;
+    // Fetch current max_photos
+    Map<String, dynamic>? film = await getFilmById(filmId);
+    if (film != null) {
+      int currentMax = film['max_photos'] ?? 18; // Default to 18 if null
+      int newMax = currentMax + additionalPhotos;
+      await db.update(
+        'films',
+        {'max_photos': newMax},
+        where: 'id = ?',
+        whereArgs: [filmId],
+      );
+      print('Updated film ID: $filmId max_photos from $currentMax to $newMax.');
+    }
   }
 }
 

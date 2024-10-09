@@ -6,7 +6,6 @@ import 'database_helper.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:async';
 import 'dart:io';
-import 'buy_new_film_page.dart'; // Import the new page
 
 void main() {
   runApp(const PhotoSaverApp());
@@ -184,29 +183,22 @@ class _FilmHomePageState extends State<FilmHomePage> {
       appBar: AppBar(
         title: Text('${_capitalize(currentStatus)} Films'),
         actions: [
+          // "Buy New Film" Button
           Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 12.0),
             child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BuyNewFilmPage()),
-                ).then((_) {
-                  // Refresh the film lists when returning from the BuyNewFilmPage
-                  _loadStatusCounts();
-                });
-              },
+              onPressed: _navigateToBuyNewFilmPage,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue, // Background color
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0), // Rounded corners
+                  borderRadius: BorderRadius.circular(25.0), // Rounded corners
                 ),
               ),
               child: const Text(
-                'Buy New Film',
+                'Add New Film',
                 style: TextStyle(
                   color: Colors.white, // Text color
-                  fontSize: 16.0,
+                  fontSize: 14.0,
                 ),
               ),
             ),
@@ -222,12 +214,25 @@ class _FilmHomePageState extends State<FilmHomePage> {
       // Remove the FAB as it's now replaced by the AppBar button
       // floatingActionButton: _currentIndex == _statuses.indexOf(FilmStatus.active) // Show FAB only on 'active' tab
       //     ? FloatingActionButton(
-      //         onPressed: _showAddFilmDialog,
+      //         onPressed: _navigateToBuyNewFilmPage,
       //         child: const Icon(Icons.add),
-      //         tooltip: 'Add New Film',
+      //         tooltip: 'Buy New Film',
       //       )
       //     : null,
     );
+  }
+
+  // Navigate to the BuyNewFilmPage
+  void _navigateToBuyNewFilmPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const BuyNewFilmPage(),
+      ),
+    ).then((value) {
+      // Refresh counts and lists when returning from the BuyNewFilmPage
+      _loadStatusCounts();
+    });
   }
 }
 
@@ -339,15 +344,14 @@ class _FilmTileState extends State<FilmTile> {
 
   // Load film details
   Future<void> _loadFilmDetails() async {
-    Map<String, dynamic>? filmDetails =
-        await _dbHelper.getFilmById(widget.film['id']);
+    Map<String, dynamic>? filmDetails = await _dbHelper.getFilmById(widget.film['id']);
     if (filmDetails != null) {
       setState(() {
-        maxPhotos = filmDetails['max_photos'] ?? 3; // Default to 3 if null
+        maxPhotos = filmDetails['max_photos'] ?? 18; // Default to 18 if null
         status = filmDetails['status'] ?? FilmStatus.active;
       });
 
-      print('Film "${widget.film['name']}" loaded with status "$status" and max photos $maxPhotos.'); // Debugging
+      print('Film "${widget.film['name']}" loaded with status "$status" and max photos $maxPhotos.');
 
       // Start timer if status is 'on the way'
       if (status == FilmStatus.onTheWay) {
@@ -370,19 +374,154 @@ class _FilmTileState extends State<FilmTile> {
   Color _getBorderColor(String status) {
     switch (status) {
       case FilmStatus.active:
-        return Colors.green;
+        return Colors.blue;
       case FilmStatus.readyToPrint:
-        return Colors.orange;
+        return Colors.green;
       case FilmStatus.onTheWay:
-        return Colors.grey;
+        return Colors.orange;
       case FilmStatus.arrived:
-        return Colors.blue; // As per user request
+        return Colors.green; // As per user request
       default:
         return Colors.grey;
     }
   }
 
-  // Handle tap on the frame
+  // Handle tap on the "+" button
+  void _handleAddPhotosTap() {
+    _showAddPhotosDialog();
+  }
+
+  // Show dialog to add photos
+  Future<void> _showAddPhotosDialog() async {
+    int? selectedPhotos;
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Add Photos"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  selectedPhotos = 18;
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black, backgroundColor: Colors.white, // Black text
+                  minimumSize: const Size(double.infinity, 40), // Full width
+                  side: const BorderSide(color: Colors.grey), // Border
+                ),
+                child: const Text("Add 18 Photos"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  selectedPhotos = 36;
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black, backgroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 40),
+                  side: const BorderSide(color: Colors.grey),
+                ),
+                child: const Text("Add 36 Photos"),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  selectedPhotos = 72;
+                  Navigator.of(context).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.black, backgroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 40),
+                  side: const BorderSide(color: Colors.grey),
+                ),
+                child: const Text("Add 72 Photos"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Cancel
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: selectedPhotos != null ? () {
+                Navigator.of(context).pop();
+              } : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // Blue background
+              ),
+              child: const Text("Confirm"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (selectedPhotos != null) {
+      // Show confirmation dialog
+      bool? confirm = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Confirm Addition"),
+            content: Text("Are you sure you want to add $selectedPhotos photos?"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false); // Cancel
+                },
+                child: const Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true); // Confirm
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue, // Blue background
+                ),
+                child: const Text("Confirm"),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirm == true) {
+        // Update the max photos
+        await _dbHelper.updateFilmMaxPhotos(widget.film['id'], selectedPhotos!);
+        await _loadFilmDetails();
+        await _loadPhotoCount();
+        widget.onStatusChange();
+
+        // If in "Ready to Print" tab, revert status to "Active"
+        if (status == FilmStatus.readyToPrint) {
+          await _dbHelper.updateFilmStatus(widget.film['id'], FilmStatus.active);
+          await _loadFilmDetails();
+          await _loadPhotoCount();
+          widget.onStatusChange();
+
+          // Move film back to "Active" tab
+          // This requires popping back to main page and refreshing
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Added photos. Film status reverted to Active.")),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Successfully added $selectedPhotos photos.")),
+          );
+        }
+      }
+    }
+  }
+
+  // Handle tap on the film frame
   void _handleFrameTap() {
     switch (status) {
       case FilmStatus.active:
@@ -531,9 +670,10 @@ class _FilmTileState extends State<FilmTile> {
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue, // Ensure button background is blue
+                backgroundColor: Colors.blue,
               ),
-              child: const Text("Confirm"),
+              child: const Text("Confirm",style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
@@ -574,47 +714,172 @@ class _FilmTileState extends State<FilmTile> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _handleFrameTap, // Handle tap based on status
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Colors.white, // Frame interior color
-          border: Border.all(
-            color: _getBorderColor(status),
-            width: 2.0,
+    // Determine if the current tab allows adding photos
+    bool canAddPhotos = status == FilmStatus.active || status == FilmStatus.readyToPrint;
+
+    return Row(
+      children: [
+        if (canAddPhotos)
+          IconButton(
+            icon: const Icon(Icons.add),
+            color: Colors.blue,
+            onPressed: _handleAddPhotosTap,
+            tooltip: 'Add Photos',
+            iconSize: 24.0, // Slightly smaller
           ),
-          borderRadius: BorderRadius.circular(20.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3), // changes position of shadow
+        Expanded(
+          child: GestureDetector(
+            onTap: _handleFrameTap, // Handle tap based on status
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white, // Frame interior color
+                border: Border.all(
+                  color: _getBorderColor(status),
+                  width: 2.0,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, 3), // changes position of shadow
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.film['name'],
+                    style: const TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                  Text(
+                    'Photos: $photoCount/$maxPhotos',
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  // Remove status text as it's indicated by the tab and border color
+                ],
+              ),
             ),
-          ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.film['name'],
-              style: const TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
+      ],
+    );
+  }
+}
+
+// BuyNewFilmPage Widget to add a new film
+class BuyNewFilmPage extends StatefulWidget {
+  const BuyNewFilmPage({Key? key}) : super(key: key);
+
+  @override
+  _BuyNewFilmPageState createState() => _BuyNewFilmPageState();
+}
+
+class _BuyNewFilmPageState extends State<BuyNewFilmPage> {
+  final DatabaseHelper _dbHelper = DatabaseHelper();
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _filmNameController = TextEditingController();
+  int? _selectedMaxPhotos;
+  List<int> _options = [2,18, 36, 72];
+
+  @override
+  void dispose() {
+    _filmNameController.dispose();
+    super.dispose();
+  }
+
+  // Handle adding a new film
+  Future<void> _addNewFilm() async {
+    if (_formKey.currentState!.validate()) {
+      String name = _filmNameController.text.trim();
+      int maxPhotos = _selectedMaxPhotos!;
+
+      await _dbHelper.insertFilm(name, maxPhotos);
+      print('Added film: $name with max photos: $maxPhotos'); // Debugging
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("New film added successfully.")),
+      );
+
+      Navigator.of(context).pop(); // Go back to the previous screen
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Buy New Film"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _filmNameController,
+                decoration: const InputDecoration(
+                  labelText: "Film Name",
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return "Please enter a film name.";
+                  }
+                  return null;
+                },
               ),
-            ),
-            const SizedBox(height: 8.0),
-            Text(
-              'Photos: $photoCount/$maxPhotos',
-              style: const TextStyle(
-                fontSize: 14.0,
-                color: Colors.black54,
+              const SizedBox(height: 20),
+              DropdownButtonFormField<int>(
+                value: _selectedMaxPhotos,
+                decoration: const InputDecoration(
+                  labelText: "Select Max Photos",
+                  border: OutlineInputBorder(),
+                ),
+                items: _options.map((int value) {
+                  return DropdownMenuItem<int>(
+                    value: value,
+                    child: Text("$value Photos"),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMaxPhotos = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return "Please select the maximum number of photos.";
+                  }
+                  return null;
+                },
               ),
-            ),
-            // Remove status text as it's indicated by the tab and border color
-          ],
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _addNewFilm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue, // Blue background
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                ),
+                child: const Text(
+                  "Confirm",
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
